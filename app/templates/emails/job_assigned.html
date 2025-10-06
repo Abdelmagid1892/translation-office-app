@@ -1,0 +1,10 @@
+<h2>New job assignment</h2>
+<p>Hello {{ job.translator.username }},</p>
+<p>You have been assigned to job #{{ job.id }} for client {{ job.request.client.username }}.</p>
+<ul>
+    <li>Languages: {{ job.request.source_language }} → {{ job.request.target_language }}</li>
+    <li>Word count: {{ job.request.word_count }}</li>
+    <li>Due date: {{ job.due_date.strftime('%Y-%m-%d %H:%M') if job.due_date else 'not set' }}</li>
+</ul>
+<p>Please log in to the portal to review details and start the translation.</p>
+<p>Translation Office Team</p>

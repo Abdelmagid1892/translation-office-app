@@ -1,72 +1,225 @@
 {% extends "base.html" %}
 {% block content %}
-<h2 class="mb-4">Manager Dashboard</h2>
-<div class="card shadow-sm">
-    <div class="card-body">
-        <h5 class="card-title">All Translation Requests</h5>
-        {% if translation_requests %}
-            <div class="table-responsive">
-                <table class="table table-hover align-middle">
-                    <thead>
-                        <tr>
-                            <th>ID</th>
-                            <th>Client</th>
-                            <th>Source</th>
-                            <th>Target</th>
-                            <th>Status</th>
-                            <th>Translator</th>
-                            <th>Original</th>
-                            <th>Translated</th>
-                            <th>Actions</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for job in translation_requests %}
-                            <tr>
-                                <td>{{ job.id }}</td>
-                                <td>{{ job.client.username }}</td>
-                                <td>{{ job.source_language }}</td>
-                                <td>{{ job.target_language }}</td>
-                                <td>{{ job.status }}</td>
-                                <td>{{ job.translator.username if job.translator else 'Unassigned' }}</td>
-                                <td><a href="/uploads/{{ job.original_filename }}" target="_blank">Download</a></td>
-                                <td>
-                                    {% if job.translated_filename %}
-                                        <a href="/uploads/{{ job.translated_filename }}" target="_blank">Download</a>
-                                    {% else %}
-                                        <span class="text-muted">Pending</span>
-                                    {% endif %}
-                                </td>
-                                <td>
-                                    <form method="post" action="/manager/jobs/{{ job.id }}/update" class="row gy-2" enctype="multipart/form-data">
-                                        <div class="col-12 col-lg-5">
-                                            <select class="form-select" name="status">
-                                                {% for option in ['New', 'In progress', 'Delivered'] %}
-                                                    <option value="{{ option }}" {% if job.status == option %}selected{% endif %}>{{ option }}</option>
-                                                {% endfor %}
-                                            </select>
-                                        </div>
-                                        <div class="col-12 col-lg-5">
-                                            <select class="form-select" name="translator_id">
-                                                <option value="">-- Assign translator --</option>
-                                                {% for translator in translators %}
-                                                    <option value="{{ translator.id }}" {% if job.translator and job.translator.id == translator.id %}selected{% endif %}>{{ translator.username }}</option>
-                                                {% endfor %}
-                                            </select>
-                                        </div>
-                                        <div class="col-12 col-lg-2 d-grid">
-                                            <button type="submit" class="btn btn-sm btn-primary">Update</button>
-                                        </div>
-                                    </form>
-                                </td>
-                            </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h1 class="h3 mb-1">Manager dashboard</h1>
+        <p class="text-muted mb-0">Monitor requests, quotes, jobs and team activity.</p>
+    </div>
+</div>
+<div class="row g-3 mb-4">
+    <div class="col-md-4">
+        <div class="card border-0 shadow-sm h-100">
+            <div class="card-body">
+                <h6 class="text-muted text-uppercase">Pending quotes</h6>
+                <h2 class="fw-bold">{{ pending_quotes }}</h2>
             </div>
-        {% else %}
-            <p class="text-muted">No translation requests yet.</p>
-        {% endif %}
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card border-0 shadow-sm h-100">
+            <div class="card-body">
+                <h6 class="text-muted text-uppercase">Open jobs</h6>
+                <h2 class="fw-bold">{{ open_jobs }}</h2>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card border-0 shadow-sm h-100">
+            <div class="card-body">
+                <h6 class="text-muted text-uppercase">Invoices issued</h6>
+                <h2 class="fw-bold">{{ invoices_count }}</h2>
+            </div>
+        </div>
+    </div>
+</div>
+<div class="card border-0 shadow-sm mb-4">
+    <div class="card-header bg-white d-flex justify-content-between align-items-center">
+        <h2 class="h5 mb-0">Translation requests</h2>
+        <form class="d-flex" method="get">
+            <input type="search" name="search" class="form-control form-control-sm me-2" placeholder="Search by client or language" value="{{ search }}">
+            <button class="btn btn-outline-primary btn-sm" type="submit">Search</button>
+        </form>
+    </div>
+    <div class="table-responsive">
+        <table class="table align-middle mb-0">
+            <thead class="table-light">
+                <tr>
+                    <th>ID</th>
+                    <th>Client</th>
+                    <th>Languages</th>
+                    <th>Words</th>
+                    <th>Status</th>
+                    <th>Quote</th>
+                    <th>Job</th>
+                    <th>Created</th>
+                    <th class="text-end">Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for req in translation_requests %}
+                    <tr>
+                        <td>#{{ req.id }}</td>
+                        <td>{{ req.client.username }}</td>
+                        <td>{{ req.source_language }} → {{ req.target_language }}</td>
+                        <td>{{ req.word_count }}</td>
+                        <td><span class="badge bg-info text-dark">{{ req.status }}</span></td>
+                        <td>
+                            {% if req.quote %}
+                                <span class="badge bg-secondary">{{ req.quote.status }}</span><br>
+                                <small>{{ '%.2f'|format(req.quote.total) }} {{ req.quote.currency }}</small>
+                            {% else %}
+                                <span class="text-muted">Pending</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if req.job %}
+                                <span class="badge bg-secondary">{{ req.job.status }}</span>
+                            {% else %}
+                                <span class="text-muted">—</span>
+                            {% endif %}
+                        </td>
+                        <td>{{ req.created_at.strftime('%Y-%m-%d') }}</td>
+                        <td class="text-end">
+                            <div class="btn-group btn-group-sm">
+                                {% if req.quote %}
+                                    <a class="btn btn-outline-primary" href="/client/quotes/{{ req.quote.id }}">Quote</a>
+                                {% endif %}
+                                {% if req.job %}
+                                    <a class="btn btn-outline-secondary" href="/jobs/{{ req.job.id }}">Job</a>
+                                {% endif %}
+                            </div>
+                        </td>
+                    </tr>
+                {% else %}
+                    <tr>
+                        <td colspan="9" class="text-center text-muted py-4">No requests available.</td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% set total_pages = (total_requests // page_size) + (1 if total_requests % page_size else 0) %}
+    {% if total_pages > 1 %}
+        <div class="card-footer bg-white d-flex justify-content-between align-items-center">
+            <span class="text-muted small">Page {{ page }} of {{ total_pages }}</span>
+            <nav>
+                <ul class="pagination pagination-sm mb-0">
+                    {% for p in range(1, total_pages + 1) %}
+                        <li class="page-item {% if p == page %}active{% endif %}"><a class="page-link" href="?page={{ p }}&search={{ search }}">{{ p }}</a></li>
+                    {% endfor %}
+                </ul>
+            </nav>
+        </div>
+    {% endif %}
+</div>
+<div class="row g-4">
+    <div class="col-lg-6">
+        <div class="card border-0 shadow-sm h-100">
+            <div class="card-header bg-white"><h2 class="h5 mb-0">Quotes</h2></div>
+            <div class="card-body">
+                {% for quote in quotes %}
+                    <div class="border rounded-3 p-3 mb-3">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <h3 class="h6 mb-1">Quote #{{ quote.id }} – {{ quote.request.client.username }}</h3>
+                                <p class="text-muted mb-0">{{ quote.request.source_language }} → {{ quote.request.target_language }} · {{ quote.word_count }} words</p>
+                            </div>
+                            <span class="badge bg-secondary">{{ quote.status }}</span>
+                        </div>
+                        <form class="row g-2 mt-3" method="post" action="/manager/quotes/{{ quote.id }}/update">
+                            <div class="col-6">
+                                <label class="form-label">Unit price</label>
+                                <input type="number" step="0.01" name="unit_price" value="{{ quote.unit_price }}" class="form-control form-control-sm">
+                            </div>
+                            <div class="col-6 d-flex align-items-end justify-content-end gap-2">
+                                <button class="btn btn-outline-secondary btn-sm" type="submit">Update</button>
+                                <button form="send-quote-{{ quote.id }}" class="btn btn-primary btn-sm" type="submit">Send</button>
+                            </div>
+                        </form>
+                        <form id="send-quote-{{ quote.id }}" method="post" action="/manager/quotes/{{ quote.id }}/send"></form>
+                    </div>
+                {% else %}
+                    <p class="text-muted">No quotes available.</p>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+    <div class="col-lg-6">
+        <div class="card border-0 shadow-sm h-100">
+            <div class="card-header bg-white"><h2 class="h5 mb-0">Jobs</h2></div>
+            <div class="card-body">
+                {% for job in jobs %}
+                    <div class="border rounded-3 p-3 mb-3">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <h3 class="h6 mb-1">Job #{{ job.id }} · {{ job.request.client.username }}</h3>
+                                <p class="text-muted mb-0">{{ job.request.source_language }} → {{ job.request.target_language }}</p>
+                            </div>
+                            <span class="badge bg-secondary">{{ job.status }}</span>
+                        </div>
+                        <form class="row g-2 mt-3" method="post" action="/manager/jobs/{{ job.id }}/assign">
+                            <div class="col-md-4">
+                                <label class="form-label">Translator</label>
+                                <select class="form-select form-select-sm" name="translator_id">
+                                    <option value="">Unassigned</option>
+                                    {% for translator in translators %}
+                                        <option value="{{ translator.id }}" {% if job.translator_id == translator.id %}selected{% endif %}>{{ translator.username }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label">Due date</label>
+                                <input type="datetime-local" name="due_date" value="{{ job.due_date.strftime('%Y-%m-%dT%H:%M') if job.due_date else '' }}" class="form-control form-control-sm">
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label">Notes</label>
+                                <input type="text" name="notes" value="{{ job.notes or '' }}" class="form-control form-control-sm">
+                            </div>
+                            <div class="col-12 d-flex gap-2 justify-content-end mt-2">
+                                <button class="btn btn-outline-secondary btn-sm" type="submit">Save</button>
+                                <a class="btn btn-outline-primary btn-sm" href="/jobs/{{ job.id }}">Open</a>
+                            </div>
+                        </form>
+                        <div class="d-flex gap-2 justify-content-end mt-2">
+                            <form method="post" action="/manager/jobs/{{ job.id }}/accept">
+                                <button class="btn btn-success btn-sm" type="submit">Accept</button>
+                            </form>
+                            <form method="post" action="/manager/jobs/{{ job.id }}/return">
+                                <div class="input-group input-group-sm">
+                                    <input type="text" class="form-control" name="comment" placeholder="Return comment" required>
+                                    <button class="btn btn-outline-danger" type="submit">Return</button>
+                                </div>
+                            </form>
+                            <form method="post" action="/manager/jobs/{{ job.id }}/invoice">
+                                <button class="btn btn-outline-dark btn-sm" type="submit">Invoice</button>
+                            </form>
+                        </div>
+                    </div>
+                {% else %}
+                    <p class="text-muted">No jobs available.</p>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+</div>
+<div class="card border-0 shadow-sm mt-4">
+    <div class="card-header bg-white"><h2 class="h5 mb-0">Recent activity</h2></div>
+    <div class="card-body">
+        <ul class="list-group list-group-flush">
+            {% for log in recent_logs %}
+                <li class="list-group-item">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <strong>{{ log.user.username if log.user else 'System' }}</strong>
+                            <span class="text-muted">{{ log.action }}</span>
+                        </div>
+                        <small class="text-muted">{{ log.created_at.strftime('%Y-%m-%d %H:%M') }}</small>
+                    </div>
+                </li>
+            {% else %}
+                <li class="list-group-item text-muted">No activity yet.</li>
+            {% endfor %}
+        </ul>
     </div>
 </div>
 {% endblock %}

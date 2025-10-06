@@ -1,33 +1,52 @@
 {% extends "base.html" %}
 {% block content %}
 <div class="row justify-content-center">
-    <div class="col-md-8 col-lg-6">
-        <div class="card shadow-sm">
-            <div class="card-body">
-                <h2 class="card-title mb-4">New Translation Request</h2>
+    <div class="col-lg-7">
+        <div class="card shadow-sm border-0">
+            <div class="card-body p-4">
+                <h1 class="h4 mb-3">Submit a translation request</h1>
+                <p class="text-muted">Upload your document to receive an instant quote. Supported formats: PDF, DOCX, TXT.</p>
                 {% if error %}
                     <div class="alert alert-danger">{{ error }}</div>
                 {% endif %}
-                <form method="post" enctype="multipart/form-data">
-                    <div class="mb-3">
-                        <label class="form-label" for="source_language">Source Language</label>
-                        <input type="text" class="form-control" id="source_language" name="source_language" placeholder="e.g., English" required>
+                <form method="post" enctype="multipart/form-data" class="needs-validation" novalidate>
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label class="form-label">Source language</label>
+                            <input type="text" name="source_language" class="form-control" required placeholder="e.g. EN">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Target language</label>
+                            <input type="text" name="target_language" class="form-control" required placeholder="e.g. IT">
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label">File</label>
+                            <input type="file" name="file" class="form-control" required>
+                        </div>
                     </div>
-                    <div class="mb-3">
-                        <label class="form-label" for="target_language">Target Language</label>
-                        <input type="text" class="form-control" id="target_language" name="target_language" placeholder="e.g., Spanish" required>
-                    </div>
-                    <div class="mb-4">
-                        <label class="form-label" for="file">Document (PDF, DOCX, TXT)</label>
-                        <input class="form-control" type="file" id="file" name="file" accept=".pdf,.docx,.doc,.txt" required>
-                    </div>
-                    <div class="d-flex justify-content-between">
-                        <a class="btn btn-secondary" href="/client/dashboard">Cancel</a>
-                        <button type="submit" class="btn btn-primary">Submit Request</button>
+                    <div class="d-flex justify-content-end mt-4">
+                        <button class="btn btn-primary" type="submit"><i class="bi bi-cloud-upload"></i> Upload &amp; quote</button>
                     </div>
                 </form>
             </div>
         </div>
     </div>
 </div>
+{% endblock %}
+{% block scripts %}
+<script>
+(() => {
+  'use strict';
+  const forms = document.querySelectorAll('.needs-validation');
+  Array.from(forms).forEach(form => {
+    form.addEventListener('submit', event => {
+      if (!form.checkValidity()) {
+        event.preventDefault();
+        event.stopPropagation();
+      }
+      form.classList.add('was-validated');
+    }, false);
+  });
+})();
+</script>
 {% endblock %}

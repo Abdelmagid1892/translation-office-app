@@ -1,54 +1,68 @@
 {% extends "base.html" %}
 {% block content %}
-<h2 class="mb-4">Translator Dashboard</h2>
-<div class="card shadow-sm">
-    <div class="card-body">
-        <h5 class="card-title">Assigned Jobs</h5>
-        {% if translation_requests %}
-            <div class="table-responsive">
-                <table class="table table-striped align-middle">
-                    <thead>
-                        <tr>
-                            <th>ID</th>
-                            <th>Client</th>
-                            <th>Source</th>
-                            <th>Target</th>
-                            <th>Status</th>
-                            <th>Original</th>
-                            <th>Upload Translation</th>
-                            <th>Translated</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for job in translation_requests %}
-                            <tr>
-                                <td>{{ job.id }}</td>
-                                <td>{{ job.client.username }}</td>
-                                <td>{{ job.source_language }}</td>
-                                <td>{{ job.target_language }}</td>
-                                <td>{{ job.status }}</td>
-                                <td><a href="/uploads/{{ job.original_filename }}" target="_blank">Download</a></td>
-                                <td>
-                                    <form method="post" action="/translator/jobs/{{ job.id }}/upload" enctype="multipart/form-data" class="d-flex gap-2">
-                                        <input class="form-control" type="file" name="translated_file" accept=".pdf,.docx,.doc,.txt" required>
-                                        <button type="submit" class="btn btn-sm btn-success">Upload</button>
-                                    </form>
-                                </td>
-                                <td>
-                                    {% if job.translated_filename %}
-                                        <a href="/uploads/{{ job.translated_filename }}" target="_blank">Download</a>
-                                    {% else %}
-                                        <span class="text-muted">Not uploaded</span>
-                                    {% endif %}
-                                </td>
-                            </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h1 class="h3 mb-1">My jobs</h1>
+        <p class="text-muted mb-0">Stay on top of your assignments and deadlines.</p>
+    </div>
+</div>
+<div class="row g-3 mb-4">
+    <div class="col-md-6">
+        <div class="card border-0 shadow-sm h-100">
+            <div class="card-body">
+                <h6 class="text-muted text-uppercase">Active jobs</h6>
+                <h2 class="fw-bold">{{ active_jobs }}</h2>
             </div>
-        {% else %}
-            <p class="text-muted mb-0">No jobs assigned yet.</p>
-        {% endif %}
+        </div>
+    </div>
+    <div class="col-md-6">
+        <div class="card border-0 shadow-sm h-100">
+            <div class="card-body">
+                <h6 class="text-muted text-uppercase">Delivered</h6>
+                <h2 class="fw-bold">{{ delivered_jobs }}</h2>
+            </div>
+        </div>
+    </div>
+</div>
+<div class="card border-0 shadow-sm">
+    <div class="table-responsive">
+        <table class="table align-middle mb-0">
+            <thead class="table-light">
+                <tr>
+                    <th>ID</th>
+                    <th>Client</th>
+                    <th>Languages</th>
+                    <th>Due</th>
+                    <th>Status</th>
+                    <th class="text-end">Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for job in jobs %}
+                    <tr>
+                        <td>#{{ job.id }}</td>
+                        <td>{{ job.request.client.username }}</td>
+                        <td>{{ job.request.source_language }} → {{ job.request.target_language }}</td>
+                        <td>{{ job.due_date.strftime('%Y-%m-%d %H:%M') if job.due_date else '—' }}</td>
+                        <td><span class="badge bg-secondary">{{ job.status }}</span></td>
+                        <td class="text-end">
+                            <div class="btn-group btn-group-sm">
+                                <a class="btn btn-outline-primary" href="/jobs/{{ job.id }}">Open</a>
+                                {% if job.status == 'Assigned' %}
+                                    <form method="post" action="/translator/jobs/{{ job.id }}/start">
+                                        <button class="btn btn-success" type="submit">Start</button>
+                                    </form>
+                                {% endif %}
+                            </div>
+                        </td>
+                    </tr>
+                {% else %}
+                    <tr>
+                        <td colspan="6" class="text-center text-muted py-4">No jobs assigned yet.</td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
     </div>
 </div>
 {% endblock %}

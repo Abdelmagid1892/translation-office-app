@@ -1,0 +1,10 @@
+<h2>New translation quote</h2>
+<p>Hello {{ quote.request.client.username }},</p>
+<p>We have prepared a quote for your request #{{ quote.request.id }} ({{ quote.request.source_language }} → {{ quote.request.target_language }}).</p>
+<ul>
+    <li>Word count: {{ quote.word_count }}</li>
+    <li>Unit price: {{ '%.2f'|format(quote.unit_price) }} {{ quote.currency }}</li>
+    <li>Total: <strong>{{ '%.2f'|format(quote.total) }} {{ quote.currency }}</strong></li>
+</ul>
+<p>You can review and approve it by visiting your dashboard.</p>
+<p>Best regards,<br>Translation Office</p>

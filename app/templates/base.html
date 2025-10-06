@@ -4,22 +4,53 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{{ title if title else 'Translation Office' }}</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css">
     <link rel="stylesheet" href="{{ url_for('static', path='css/styles.css') }}">
 </head>
-<body>
-<nav class="navbar navbar-expand-lg navbar-dark bg-dark mb-4">
+<body class="bg-light">
+<nav class="navbar navbar-expand-lg navbar-dark bg-primary shadow-sm">
     <div class="container-fluid">
-        <a class="navbar-brand" href="/">Translation Office</a>
-        <div class="d-flex">
-            {% if request.session.get('user_id') %}
-            <a class="btn btn-outline-light" href="/logout">Logout</a>
-            {% endif %}
+        <a class="navbar-brand fw-semibold" href="/">Translation Office</a>
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#mainNav" aria-controls="mainNav" aria-expanded="false" aria-label="Toggle navigation">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse" id="mainNav">
+            <ul class="navbar-nav me-auto mb-2 mb-lg-0">
+                {% if user %}
+                    <li class="nav-item"><a class="nav-link" href="/">Dashboard</a></li>
+                    {% if user.role == 'manager' or user.role == 'admin' %}
+                        <li class="nav-item"><a class="nav-link" href="/manager/dashboard">Requests</a></li>
+                        <li class="nav-item"><a class="nav-link" href="/manager/glossary">Glossary</a></li>
+                    {% elif user.role == 'client' %}
+                        <li class="nav-item"><a class="nav-link" href="/client/request">New Request</a></li>
+                        <li class="nav-item"><a class="nav-link" href="/client/invoices">Invoices</a></li>
+                    {% elif user.role == 'translator' %}
+                        <li class="nav-item"><a class="nav-link" href="/translator/dashboard">My Jobs</a></li>
+                    {% endif %}
+                {% endif %}
+            </ul>
+            <div class="d-flex align-items-center gap-3 text-white">
+                {% if user %}
+                    <span class="small text-uppercase">{{ user.role }}</span>
+                    <a class="btn btn-outline-light btn-sm" href="/logout"><i class="bi bi-box-arrow-right"></i> Logout</a>
+                {% else %}
+                    <a class="btn btn-outline-light btn-sm" href="/login">Login</a>
+                {% endif %}
+            </div>
         </div>
     </div>
 </nav>
-<div class="container">
+<section class="container py-4">
+    {% if flash %}
+        <div class="alert alert-{{ flash.category }} alert-dismissible fade show shadow-sm" role="alert">
+            {{ flash.message }}
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    {% endif %}
     {% block content %}{% endblock %}
-</div>
+</section>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+{% block scripts %}{% endblock %}
 </body>
 </html>
