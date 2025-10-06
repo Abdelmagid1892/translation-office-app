@@ -9,3 +9,14 @@ body {
 .table a {
     text-decoration: none;
 }
+
+pre {
+    white-space: pre-wrap;
+    word-break: break-word;
+}
+
+mark {
+    background-color: #ffe066;
+    border-radius: 0.25rem;
+    padding: 0 0.2rem;
+}

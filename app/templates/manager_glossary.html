@@ -1,0 +1,89 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h1 class="h4 mb-1">Client glossaries</h1>
+        <p class="text-muted mb-0">Maintain preferred terminology for each client.</p>
+    </div>
+</div>
+<div class="card border-0 shadow-sm mb-4">
+    <div class="card-header bg-white">
+        <form class="row g-2 align-items-end" method="get">
+            <div class="col-md-4">
+                <label class="form-label">Filter by client</label>
+                <select class="form-select" name="client_id">
+                    <option value="">All clients</option>
+                    {% for client in clients %}
+                        <option value="{{ client.id }}" {% if client_id and client.id == client_id %}selected{% endif %}>{{ client.username }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-2">
+                <button class="btn btn-outline-primary" type="submit">Filter</button>
+            </div>
+        </form>
+    </div>
+    <div class="table-responsive">
+        <table class="table align-middle mb-0">
+            <thead class="table-light">
+                <tr>
+                    <th>Client</th>
+                    <th>Source term</th>
+                    <th>Target term</th>
+                    <th>Notes</th>
+                    <th class="text-end">Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for term in terms %}
+                    <tr>
+                        <td>{{ term.client.username if term.client else '' }}</td>
+                        <td>{{ term.source_term }}</td>
+                        <td>{{ term.target_term }}</td>
+                        <td>{{ term.notes or '—' }}</td>
+                        <td class="text-end">
+                            <form method="post" action="/manager/glossary/{{ term.id }}/delete">
+                                <button class="btn btn-outline-danger btn-sm" type="submit">Delete</button>
+                            </form>
+                        </td>
+                    </tr>
+                {% else %}
+                    <tr>
+                        <td colspan="5" class="text-center text-muted py-4">No terms yet.</td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+<div class="card border-0 shadow-sm">
+    <div class="card-header bg-white"><h2 class="h5 mb-0">Add term</h2></div>
+    <div class="card-body">
+        <form class="row g-3" method="post">
+            <div class="col-md-4">
+                <label class="form-label">Client</label>
+                <select class="form-select" name="client_id" required>
+                    {% for client in clients %}
+                        <option value="{{ client.id }}">{{ client.username }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-4">
+                <label class="form-label">Source term</label>
+                <input type="text" name="source_term" class="form-control" required>
+            </div>
+            <div class="col-md-4">
+                <label class="form-label">Target term</label>
+                <input type="text" name="target_term" class="form-control" required>
+            </div>
+            <div class="col-12">
+                <label class="form-label">Notes</label>
+                <input type="text" name="notes" class="form-control">
+            </div>
+            <div class="col-12 d-flex justify-content-end">
+                <button class="btn btn-primary" type="submit">Save term</button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

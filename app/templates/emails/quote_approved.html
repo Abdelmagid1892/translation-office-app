@@ -1,0 +1,9 @@
+<h2>Quote approved</h2>
+<p>Quote #{{ quote.id }} has been approved by {{ quote.request.client.username }}.</p>
+<ul>
+    <li>Request: #{{ quote.request.id }}</li>
+    <li>Languages: {{ quote.request.source_language }} → {{ quote.request.target_language }}</li>
+    <li>Total: {{ '%.2f'|format(quote.total) }} {{ quote.currency }}</li>
+</ul>
+<p>A job has been created and is ready for assignment.</p>
+<p>Translation Office Team</p>

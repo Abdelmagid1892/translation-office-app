@@ -1,0 +1,190 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="row g-4">
+    <div class="col-lg-4">
+        <div class="card border-0 shadow-sm mb-4">
+            <div class="card-body">
+                <h2 class="h5 mb-3">Job #{{ job.id }}</h2>
+                <dl class="row mb-0 small">
+                    <dt class="col-6 text-muted">Client</dt>
+                    <dd class="col-6">{{ job.request.client.username }}</dd>
+                    <dt class="col-6 text-muted">Translator</dt>
+                    <dd class="col-6">{{ job.translator.username if job.translator else 'Unassigned' }}</dd>
+                    <dt class="col-6 text-muted">Languages</dt>
+                    <dd class="col-6">{{ job.request.source_language }} → {{ job.request.target_language }}</dd>
+                    <dt class="col-6 text-muted">Word count</dt>
+                    <dd class="col-6">{{ job.request.word_count }}</dd>
+                    <dt class="col-6 text-muted">Due date</dt>
+                    <dd class="col-6">{{ job.due_date.strftime('%Y-%m-%d %H:%M') if job.due_date else '—' }}</dd>
+                    <dt class="col-6 text-muted">Status</dt>
+                    <dd class="col-6"><span class="badge bg-secondary">{{ job.status }}</span></dd>
+                </dl>
+                {% if job.manager_comment %}
+                    <div class="alert alert-warning mt-3">Manager note: {{ job.manager_comment }}</div>
+                {% endif %}
+                {% if job.invoice %}
+                    <a class="btn btn-outline-dark btn-sm mt-3" href="/client/invoices/{{ job.invoice.id }}/download"><i class="bi bi-file-earmark-pdf"></i> Invoice</a>
+                {% endif %}
+            </div>
+        </div>
+        <div class="card border-0 shadow-sm">
+            <div class="card-header bg-white"><h2 class="h6 mb-0">Glossary</h2></div>
+            <div class="card-body small">
+                {% if terms %}
+                    <ul class="list-group list-group-flush">
+                        {% for term in terms %}
+                            <li class="list-group-item d-flex justify-content-between align-items-start">
+                                <div>
+                                    <strong>{{ term.source_term }}</strong>
+                                    <div class="text-muted">{{ term.target_term }}</div>
+                                </div>
+                                {% if term.notes %}
+                                    <span class="badge bg-info text-dark">{{ term.notes }}</span>
+                                {% endif %}
+                            </li>
+                        {% endfor %}
+                    </ul>
+                {% else %}
+                    <p class="text-muted mb-0">No glossary terms yet.</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    <div class="col-lg-8">
+        <div class="card border-0 shadow-sm mb-4">
+            <div class="card-header bg-white d-flex justify-content-between align-items-center">
+                <h2 class="h5 mb-0">Source content</h2>
+            </div>
+            <div class="card-body" style="max-height: 320px; overflow:auto;">
+                <pre id="sourceText" class="small mb-0">{{ job.request.source_text }}</pre>
+            </div>
+        </div>
+        {% if user.role == 'translator' and job.translator_id == user.id %}
+        <div class="card border-0 shadow-sm mb-4">
+            <div class="card-header bg-white"><h2 class="h5 mb-0">Deliver translation</h2></div>
+            <div class="card-body">
+                <form method="post" action="/translator/jobs/{{ job.id }}/deliver" enctype="multipart/form-data">
+                    <div class="mb-3">
+                        <label class="form-label">Translation (for QA check)</label>
+                        <textarea class="form-control" name="translated_text" rows="6">{{ job.translated_text or '' }}</textarea>
+                        <div class="form-text">Numbers must match the source; mismatches will trigger a warning.</div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Deliverable file</label>
+                        <input class="form-control" type="file" name="deliverable">
+                    </div>
+                    <button class="btn btn-success" type="submit"><i class="bi bi-send"></i> Submit deliverable</button>
+                </form>
+            </div>
+        </div>
+        {% elif job.delivered_filename %}
+            <div class="card border-0 shadow-sm mb-4">
+                <div class="card-body">
+                    <h2 class="h6">Deliverable</h2>
+                    <a class="btn btn-outline-primary btn-sm" href="/uploads/{{ job.delivered_filename }}">Download deliverable</a>
+                </div>
+            </div>
+        {% endif %}
+        <div class="card border-0 shadow-sm">
+            <div class="card-header bg-white d-flex justify-content-between align-items-center">
+                <h2 class="h5 mb-0">Project chat</h2>
+            </div>
+            <div class="card-body" style="max-height: 320px; overflow:auto;" id="chatMessages">
+                {% for message in messages %}
+                    <div class="mb-3">
+                        <div class="d-flex justify-content-between small">
+                            <strong>{{ message.user.username }}</strong>
+                            <span class="text-muted">{{ message.created_at.strftime('%Y-%m-%d %H:%M') }}</span>
+                        </div>
+                        <p class="mb-0">{{ message.text | safe }}</p>
+                    </div>
+                {% endfor %}
+            </div>
+            <div class="card-footer bg-white">
+                <form id="chatForm" method="post" action="/jobs/{{ job.id }}/messages">
+                    <div class="input-group">
+                        <input type="text" class="form-control" id="chatInput" maxlength="1000" placeholder="Type a message" required>
+                        <button class="btn btn-primary" type="submit">Send</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+{% block scripts %}
+<script>
+const glossary = {{ terms|map(attribute='source_term')|list|tojson }};
+const targetHints = {{ terms|map(attribute='target_term')|list|tojson }};
+const sourceEl = document.getElementById('sourceText');
+if (sourceEl) {
+    let content = sourceEl.textContent;
+    const escapeRegex = str => str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    glossary.forEach((term, index) => {
+        const regex = new RegExp(escapeRegex(term), 'gi');
+        content = content.replace(regex, match => `<mark data-bs-toggle="tooltip" title="${targetHints[index]}">${match}</mark>`);
+    });
+    sourceEl.innerHTML = content;
+    const tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+    tooltipTriggerList.map(el => new bootstrap.Tooltip(el));
+}
+
+const jobId = {{ job.id }};
+const messagesBox = document.getElementById('chatMessages');
+const chatForm = document.getElementById('chatForm');
+const chatInput = document.getElementById('chatInput');
+
+function appendMessage(message) {
+    const wrapper = document.createElement('div');
+    wrapper.classList.add('mb-3');
+    wrapper.innerHTML = `<div class="d-flex justify-content-between small"><strong>${message.user}</strong><span class="text-muted">${new Date(message.created_at).toLocaleString()}</span></div><p class="mb-0">${message.text}</p>`;
+    messagesBox.appendChild(wrapper);
+    messagesBox.scrollTop = messagesBox.scrollHeight;
+}
+
+async function fetchMessages() {
+    const response = await fetch(`/jobs/${jobId}/messages`);
+    if (!response.ok) return;
+    const data = await response.json();
+    messagesBox.innerHTML = '';
+    data.forEach(appendMessage);
+}
+
+let socket;
+function initWebSocket() {
+    const protocol = window.location.protocol === 'https:' ? 'wss' : 'ws';
+    socket = new WebSocket(`${protocol}://${window.location.host}/ws/jobs/${jobId}`);
+    socket.onmessage = event => {
+        const message = JSON.parse(event.data);
+        appendMessage(message);
+    };
+    socket.onclose = () => {
+        setTimeout(() => initWebSocket(), 5000);
+    };
+}
+
+fetchMessages();
+setInterval(fetchMessages, 5000);
+if (window.WebSocket) {
+    initWebSocket();
+}
+
+chatForm.addEventListener('submit', async (event) => {
+    event.preventDefault();
+    if (!chatInput.value.trim()) return;
+    const formData = new FormData();
+    formData.append('text', chatInput.value.trim());
+    const response = await fetch(`/jobs/${jobId}/messages`, {
+        method: 'POST',
+        body: formData,
+        headers: { 'Accept': 'application/json' }
+    });
+    if (response.ok) {
+        chatInput.value = '';
+        if (!window.WebSocket) {
+            fetchMessages();
+        }
+    }
+});
+</script>
+{% endblock %}

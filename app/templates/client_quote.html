@@ -1,0 +1,38 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-lg-6">
+        <div class="card shadow-sm border-0 mb-4">
+            <div class="card-body p-4">
+                <h1 class="h4 mb-3">Quote #{{ quote.id }}</h1>
+                <p class="text-muted">Generated on {{ quote.created_at.strftime('%Y-%m-%d') }} for request #{{ quote.request.id }}.</p>
+                <dl class="row mb-0">
+                    <dt class="col-6 text-muted">Languages</dt>
+                    <dd class="col-6">{{ quote.request.source_language }} → {{ quote.request.target_language }}</dd>
+                    <dt class="col-6 text-muted">Word count</dt>
+                    <dd class="col-6">{{ quote.word_count }}</dd>
+                    <dt class="col-6 text-muted">Unit price</dt>
+                    <dd class="col-6">{{ '%.2f'|format(quote.unit_price) }} {{ quote.currency }}</dd>
+                    <dt class="col-6 text-muted">Total</dt>
+                    <dd class="col-6 fw-bold">{{ '%.2f'|format(quote.total) }} {{ quote.currency }}</dd>
+                    <dt class="col-6 text-muted">Status</dt>
+                    <dd class="col-6"><span class="badge bg-secondary">{{ quote.status }}</span></dd>
+                </dl>
+                {% if quote.status in ['Sent', 'Draft'] %}
+                    <div class="d-flex gap-2 mt-4">
+                        <form method="post" action="/client/quotes/{{ quote.id }}/approve">
+                            <button class="btn btn-success" type="submit"><i class="bi bi-check-circle"></i> Approve</button>
+                        </form>
+                        <form method="post" action="/client/quotes/{{ quote.id }}/reject">
+                            <button class="btn btn-outline-danger" type="submit"><i class="bi bi-x-circle"></i> Reject</button>
+                        </form>
+                    </div>
+                {% elif quote.status == 'Approved' and quote.request.job %}
+                    <div class="alert alert-success mt-3">Job created! Track progress <a href="/jobs/{{ quote.request.job.id }}">here</a>.</div>
+                {% endif %}
+            </div>
+        </div>
+        <a href="/client/dashboard" class="btn btn-link"><i class="bi bi-arrow-left"></i> Back to dashboard</a>
+    </div>
+</div>
+{% endblock %}

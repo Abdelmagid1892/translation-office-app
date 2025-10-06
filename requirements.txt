@@ -4,3 +4,7 @@ jinja2
 sqlalchemy
 passlib[bcrypt]
 python-multipart
+python-docx
+pdfminer.six
+reportlab
+python-dotenv
