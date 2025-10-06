@@ -1,0 +1,54 @@
+{% extends "base.html" %}
+{% block content %}
+<h2 class="mb-4">Translator Dashboard</h2>
+<div class="card shadow-sm">
+    <div class="card-body">
+        <h5 class="card-title">Assigned Jobs</h5>
+        {% if translation_requests %}
+            <div class="table-responsive">
+                <table class="table table-striped align-middle">
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Client</th>
+                            <th>Source</th>
+                            <th>Target</th>
+                            <th>Status</th>
+                            <th>Original</th>
+                            <th>Upload Translation</th>
+                            <th>Translated</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for job in translation_requests %}
+                            <tr>
+                                <td>{{ job.id }}</td>
+                                <td>{{ job.client.username }}</td>
+                                <td>{{ job.source_language }}</td>
+                                <td>{{ job.target_language }}</td>
+                                <td>{{ job.status }}</td>
+                                <td><a href="/uploads/{{ job.original_filename }}" target="_blank">Download</a></td>
+                                <td>
+                                    <form method="post" action="/translator/jobs/{{ job.id }}/upload" enctype="multipart/form-data" class="d-flex gap-2">
+                                        <input class="form-control" type="file" name="translated_file" accept=".pdf,.docx,.doc,.txt" required>
+                                        <button type="submit" class="btn btn-sm btn-success">Upload</button>
+                                    </form>
+                                </td>
+                                <td>
+                                    {% if job.translated_filename %}
+                                        <a href="/uploads/{{ job.translated_filename }}" target="_blank">Download</a>
+                                    {% else %}
+                                        <span class="text-muted">Not uploaded</span>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        {% else %}
+            <p class="text-muted mb-0">No jobs assigned yet.</p>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
