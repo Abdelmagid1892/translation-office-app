@@ -1,0 +1,33 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-8 col-lg-6">
+        <div class="card shadow-sm">
+            <div class="card-body">
+                <h2 class="card-title mb-4">New Translation Request</h2>
+                {% if error %}
+                    <div class="alert alert-danger">{{ error }}</div>
+                {% endif %}
+                <form method="post" enctype="multipart/form-data">
+                    <div class="mb-3">
+                        <label class="form-label" for="source_language">Source Language</label>
+                        <input type="text" class="form-control" id="source_language" name="source_language" placeholder="e.g., English" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label" for="target_language">Target Language</label>
+                        <input type="text" class="form-control" id="target_language" name="target_language" placeholder="e.g., Spanish" required>
+                    </div>
+                    <div class="mb-4">
+                        <label class="form-label" for="file">Document (PDF, DOCX, TXT)</label>
+                        <input class="form-control" type="file" id="file" name="file" accept=".pdf,.docx,.doc,.txt" required>
+                    </div>
+                    <div class="d-flex justify-content-between">
+                        <a class="btn btn-secondary" href="/client/dashboard">Cancel</a>
+                        <button type="submit" class="btn btn-primary">Submit Request</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
