@@ -140,6 +140,7 @@ def view_quote(
 
 @router.post("/client/quotes/{quote_id}/approve")
 def approve_quote(
+    request: Request,
     quote_id: int,
     user: models.User = Depends(require_role(ROLE_CLIENT)),
     db: Session = Depends(get_db),
@@ -167,6 +168,7 @@ def approve_quote(
 
 @router.post("/client/quotes/{quote_id}/reject")
 def reject_quote(
+    request: Request,
     quote_id: int,
     user: models.User = Depends(require_role(ROLE_CLIENT)),
     db: Session = Depends(get_db),

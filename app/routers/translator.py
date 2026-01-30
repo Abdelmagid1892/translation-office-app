@@ -47,6 +47,7 @@ def dashboard(
 
 @router.post("/translator/jobs/{job_id}/start")
 def start_job(
+    request: Request,
     job_id: int,
     user: models.User = Depends(require_role(ROLE_TRANSLATOR)),
     db: Session = Depends(get_db),
