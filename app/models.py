@@ -1,7 +1,7 @@
 from datetime import datetime
 
 from sqlalchemy import Column, DateTime, Float, ForeignKey, Integer, String, Text
-from sqlalchemy.orm import relationship
+from sqlalchemy.orm import foreign, relationship
 
 from .database import Base
 
@@ -41,7 +41,7 @@ class TranslationRequest(Base):
     job = relationship("Job", back_populates="request", uselist=False)
     terms = relationship(
         "Term",
-        primaryjoin="TranslationRequest.client_id==Term.client_id",
+        primaryjoin="TranslationRequest.client_id==foreign(Term.client_id)",
         viewonly=True,
     )
 
